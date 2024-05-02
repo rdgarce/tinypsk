@@ -6,10 +6,9 @@
 #ifndef HANDSHAKE_H_
 #define HANDSHAKE_H_
 
-#include "tinypsk.h"
+#include "tp_types.h"
 #include "lin.h"
 #include "sha256_prim.h"
-#include "tp_types.h"
 
 typedef struct Handshake_H_p_t_ Handshake_H_p_t;
 struct Handshake_H_p_t_ {
@@ -27,7 +26,10 @@ struct hds_layer_ {
     int (*get_ms)(uint16_t, Random_t *, uint8_t *);
 };
 
-void handshake_init(hds_layer *h, void *buffer, size_t buf_size);
+#include "tinypsk.h"
+
+void handshake_init(hds_layer *h, int (*get_ms)(uint16_t, Random_t *, uint8_t *),
+                            uint16_t psk_identity, void *buffer, size_t buf_size);
 void *handshake_lin_alloc(hds_layer *h, size_t size);
 Handshake_H_p_t handshake_parse_header(const void *header);
 int handshake_do_C(tp_sock_t *s);

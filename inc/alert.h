@@ -5,13 +5,14 @@
 #ifndef ALERT_H_
 #define ALERT_H_
 
-#include "tinypsk.h"
-#include "tp_types.h"
-
 /*
 *  You can get the length of this message by sizeof
 */
 typedef struct Alert_t_ Alert_t;
+
+#include "tinypsk.h"
+#include "tp_types.h"
+
 struct __attribute__ ((__packed__)) Alert_t_{
     AlertLevel_t level;
     AlertDescription_t description;

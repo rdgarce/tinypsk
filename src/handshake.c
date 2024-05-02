@@ -985,8 +985,11 @@ static int handle_f(tp_sock_t *s, const void *handshake_m, uint32_t handshake_m_
 
 /* ---------------------------------- API functions ---------------------------------- */
 
-void handshake_init(hds_layer *h, void *buffer, size_t buf_size) {
+void handshake_init(hds_layer *h, int (*get_ms)(uint16_t, Random_t *, uint8_t *),
+                            uint16_t psk_identity, void *buffer, size_t buf_size) {
 
+    h->get_ms = get_ms;
+    h->psk_identity = psk_identity;                           
     lin_init(&h->alloc, buffer, buf_size);
 }
 

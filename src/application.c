@@ -2,6 +2,8 @@
 #include "record.h"
 #include "tp_defines.h"
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 void application_init(app_layer *a, void *buffer, size_t buf_size) {
 
     cbuf_init(&a->allocator, buffer, buf_size);
@@ -13,9 +15,13 @@ void application_cbuf_alloc(app_layer *a, size_t size, void **zones,
     cbuf_alloc(&a->allocator, size, zones, zone_sizes);
 }
 
-size_t application_receiveN(app_layer *a, void *out, size_t N) {
+size_t application_receiveN(tp_sock_t *s, void *out, size_t N) {
 
-    return cbuf_popN(&a->allocator, out, N);
+    size_t pops = cbuf_popN(&s->a.allocator, out, N);
+    if (s->a.allocator.nelem == 0)
+        s->sock_state = s->sock_state & ~SOCK_APPL_RD;
+
+    return pops;
 }
 
 int application_send(tp_sock_t *s, const void *data, size_t size) {

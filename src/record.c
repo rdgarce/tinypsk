@@ -228,7 +228,7 @@ static int recv_fragment_vector(tp_sock_t *s, void **zones, size_t *zone_sizes,
         uint8_t MAC[32];
         if (recv_bytes(s, MAC, 32) < 0)
             return TP_FATAL;
-        res = decipher_null_sha(s, zones, zone_sizes, MAC, plain_h);
+        res = decipher_null_sha(s, (const void **)zones, zone_sizes, MAC, plain_h);
     }
     else
         return TP_FATAL;  /* CipherSuite not available */
@@ -355,7 +355,7 @@ static int handle_application_data(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
     int res;
     void *zones[2];
     size_t zone_sizes[2];
-    application_cbuf_alloc(&s->apl, plain_h->length, zones, zone_sizes);
+    application_cbuf_alloc(&s->a, plain_h->length, zones, zone_sizes);
     
     res = recv_fragment_vector(s, zones, zone_sizes, plain_h, ciphered_h);
     
@@ -374,14 +374,14 @@ static int handle_application_data(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
         break;
     }
 
-    return application_handle(s, zones, zone_sizes);
+    return application_handle(s, (const void **)zones, zone_sizes);
 }
 
 static int handle_handshake(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
                                     const TLS_Ciph_H_t *ciphered_h) {
     /* Need to handle reception of multiple record that compose the same
        handshake message */
-    void *handshake_first_m = handshake_lin_alloc(s, plain_h->length);
+    void *handshake_first_m = handshake_lin_alloc(&s->h, plain_h->length);
     if (!handshake_first_m) {
         s->sock_state = SOCK_CLOSED;
         return TP_FATAL;
@@ -419,7 +419,6 @@ static int handle_handshake(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
     for (size_t i = 0; i < num_iters_floor; i++) {
         TLS_Plain_H_t plain_h;
         TLS_Ciph_H_t ciphered_h;
-        TLSPlaintext_t plain_m;
 
         res = recv_headers(s, &plain_h, &ciphered_h);
         switch (res) {
@@ -443,7 +442,7 @@ static int handle_handshake(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
 
         /* The allocator used by the handshake protocol is linear so
            subsequent allocation receive contiguous regions (LIN_ALIGNMENT_POW = 0) */
-        void *handshake_other_m = handshake_lin_alloc(s, plain_h.length);
+        void *handshake_other_m = handshake_lin_alloc(&s->h, plain_h.length);
         if (!handshake_other_m) {
             s->sock_state = SOCK_CLOSED;
             return TP_FATAL;
@@ -503,8 +502,8 @@ int record_send_plain(tp_sock_t *s, const TLSPlaintext_t *plain_m) {
              b2 == CipherSuite_TLS_PSK_WITH_NULL_SHA.b2) {
             ciphered_m.header.length =
                 cipher_null_sha_len(plain_m->header.length);
-            res = cipher_null_sha(s, zones, zone_sizes, ciphered_m.fragment.MAC,
-                                    &plain_m->header);
+            res = cipher_null_sha(s, (const void **)zones, zone_sizes,
+                                ciphered_m.fragment.MAC, &plain_m->header);
         }
     else
         return TP_FATAL; /* CipherSuite not available */

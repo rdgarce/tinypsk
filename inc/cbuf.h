@@ -3,6 +3,8 @@
 
 #include "stddef.h"
 
+/* A circular buffer allocator. */
+
 typedef struct cbuf_t_ cbuf_t;
 struct cbuf_t_ {
     size_t head;

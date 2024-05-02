@@ -11,14 +11,21 @@
 #ifndef RECORD_H_
 #define RECORD_H_
 
-#include "tinypsk.h"
-#include "tp_types.h"
-
 typedef struct TLSPlaintext_t_ TLSPlaintext_t;
 /*
 *  You can get the length of this part of the message by sizeof
 */
 typedef struct TLS_Plain_H_t_ TLS_Plain_H_t;
+typedef struct TLSCiphertext_t_ TLSCiphertext_t;
+/*
+*  You can get the length of this part of the message by sizeof
+*/
+typedef struct TLS_Ciph_H_t_ TLS_Ciph_H_t;
+
+#include "tinypsk.h"
+#include "tp_types.h"
+
+
 struct TLSPlaintext_t_{
     struct __attribute__ ((__packed__)) TLS_Plain_H_t_ {
         ContentType_t type;
@@ -28,11 +35,6 @@ struct TLSPlaintext_t_{
     void *fragment;
 };
 
-typedef struct TLSCiphertext_t_ TLSCiphertext_t;
-/*
-*  You can get the length of this part of the message by sizeof
-*/
-typedef struct TLS_Ciph_H_t_ TLS_Ciph_H_t;
 struct TLSCiphertext_t_{
     struct __attribute__ ((__packed__)) TLS_Ciph_H_t_ {
         ContentType_t type;             /* same as TLSPlaintext_t.type */

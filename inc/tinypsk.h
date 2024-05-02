@@ -61,13 +61,24 @@
 #define SOCK_HS_DONE   ((unsigned char) 1 << 5)
 /* ----------------------------------------------------------------------------------- */
 
+#ifdef DEBUG
+#include "assert.h"
+#include "stdio.h"
+#define check(x) assert((x))
+#define print_debug(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define check(x)
+#define print_debug(...)
+#endif
+
+typedef struct tp_sock_t_ tp_sock_t;
+
 #include "stddef.h"
 #include "stdint.h"
 #include "application.h"
 #include "handshake.h"
 #include "tp_types.h"
 
-typedef struct tp_sock_t_ tp_sock_t;
 struct tp_sock_t_ {
    unsigned char sock_state;
    /* Handshake layer support structure */
