@@ -115,6 +115,11 @@ static int decipher_null_sha(const tp_sock_t *s, const void **zones,
 
 static int send_bytes(const tp_sock_t *s, const void *buf, size_t len) {
 
+    check(s && buf);
+    print_debug("*** send_bytes ***\n");
+    print_debug("  Sending out this bytes\n");
+    print_debug_arr(buf, len);
+
     size_t sent_bytes = 0;
     int res;
     while (sent_bytes < len) {
@@ -125,10 +130,16 @@ static int send_bytes(const tp_sock_t *s, const void *buf, size_t len) {
         default: sent_bytes += res; break;
         }
     }
+
+    print_debug("All bytes are sent, returning 0\n");
     return 0;
 }
 
 static int recv_bytes(const tp_sock_t *s, void *buf, size_t len) {
+
+    check(s && buf);
+    print_debug("*** recv_bytes ***\n");
+    print_debug("  Starting reception of %ld bytes\n", len);
 
     size_t recvd_bytes = 0;
     int res;
@@ -140,17 +151,55 @@ static int recv_bytes(const tp_sock_t *s, void *buf, size_t len) {
         default: recvd_bytes += res; break;
         }
     }
+
+    print_debug("  These bytes are received\n");
+    print_debug_arr(buf, len);
+    print_debug("All bytes are received, returning 0\n");
     return 0;
 }
 
 static int send_cipher(const tp_sock_t *s, TLSCiphertext_t *ciphered_m) {
 
+    check(s && ciphered_m);
+    print_debug("*** send_cipher ***\n");
+
     uint16_t ciphered_m_len = ciphered_m->header.length;
     ciphered_m->header.length = host_htobe16(ciphered_m_len);
+    
+    print_debug(
+        "  Sending a cipher message:\n"
+        "  type: %d\n"
+        "  version: %d.%d\n"
+        "  length: %d\n",
+        ciphered_m->header.type,
+        ciphered_m->header.version.major,
+        ciphered_m->header.version.minor,
+        ciphered_m_len
+    );
+    
+    /* Send the header of TLS Record protocol */
     if (send_bytes(s, &ciphered_m->header, sizeof(TLS_Ciph_H_t)) < 0)
         return TP_FATAL;
     
-    return send_bytes(s, &ciphered_m->fragment, ciphered_m_len);
+    uint8_t b1 = s->curr_write.cipher_suite.b1;
+    uint8_t b2 = s->curr_write.cipher_suite.b2;
+    if (b1 == CipherSuite_TLS_NULL_WITH_NULL_NULL.b1 &&
+        b2 == CipherSuite_TLS_NULL_WITH_NULL_NULL.b2) {
+        if (send_bytes(s, ciphered_m->fragment.content, ciphered_m_len) < 0)
+            return TP_FATAL;
+        }
+    else if (b1 == CipherSuite_TLS_PSK_WITH_NULL_SHA.b1 &&
+             b2 == CipherSuite_TLS_PSK_WITH_NULL_SHA.b2) {
+        if (send_bytes(s, ciphered_m->fragment.content,
+                decipher_null_sha_len(ciphered_m_len)) < 0)
+            return TP_FATAL;
+        if (send_bytes(s, ciphered_m->fragment.MAC, 32) < 0)
+            return TP_FATAL;
+        }
+    else
+        return TP_FATAL; /* CipherSuite not available */
+
+    return 0;
 }
 
 static int recv_cipher_header(const tp_sock_t *s, TLS_Ciph_H_t *ciphered_h) {
@@ -477,10 +526,27 @@ static int handle_handshake(tp_sock_t *s, const TLS_Plain_H_t *plain_h,
 
 int record_send_plain(tp_sock_t *s, const TLSPlaintext_t *plain_m) {
 
-    if (plain_m->header.length > (1 << 14))
+    check(s && plain_m);
+    print_debug("*** record_send_plain ***\n");
+
+    if (plain_m->header.length > (1 << 14)) {
     /* Max length is 2^14 */
+        print_debug("  returning TP_NOT_ALLOWED\n");
         return TP_NOT_ALLOWED;
-    
+    }
+
+    print_debug(
+        "  type: %d\n"
+        "  version: %d.%d\n"
+        "  length: %d\n",
+        plain_m->header.type,
+        plain_m->header.version.major,
+        plain_m->header.version.minor,
+        plain_m->header.length
+    );
+    print_debug("fragment: ");
+    print_debug_arr(plain_m->fragment, plain_m->header.length);
+
     TLSCiphertext_t ciphered_m = {
         .header.type = plain_m->header.type,
         .header.version = plain_m->header.version,
@@ -512,9 +578,11 @@ int record_send_plain(tp_sock_t *s, const TLSPlaintext_t *plain_m) {
     /* Unrecognized cipher method or hmac_sha256 error */
         return res;
 
-    if (ciphered_m.header.length > (1 << 14) + 2048)
+    if (ciphered_m.header.length > (1 << 14) + 2048) {
     /* Max length is 2^14 + 2048 */
         return TP_NOT_ALLOWED;
+    }
+
 
     if (send_cipher(s, &ciphered_m) < 0)
         return TP_FATAL;

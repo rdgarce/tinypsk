@@ -84,6 +84,9 @@ struct Finished_p_t_{
 
 static int send_handshake(tp_sock_t *s, const void *handshake_m, uint32_t handshake_len) {
 
+    print_debug("*** send_handshake ***\n");
+    print_debug_arr(handshake_m, handshake_len);
+
     int res;
     uint16_t bytes_to_send;
     uint8_t *handshake_ptr = (uint8_t *)handshake_m;
@@ -138,10 +141,11 @@ static inline int set_key_block(const uint8_t *ms, const Random_t *S_C_randoms,
 
 static void *new_raw_ch(tp_sock_t *s, const ClientHello_p_t *ch, uint32_t *ch_size) {
 
+    print_debug("*** new_raw_ch ***\n");
+
     uint8_t session_id_len = ch->session_id_len;
     uint16_t cipher_suites_len = ch->cipher_suites_len;
     uint8_t compression_methods_len = ch->compression_methods_len;
-    
     
     if (session_id_len > 32 || compression_methods_len < 1 ||
         cipher_suites_len < 2 || cipher_suites_len > (1 << 16) - 2)
@@ -161,19 +165,32 @@ static void *new_raw_ch(tp_sock_t *s, const ClientHello_p_t *ch, uint32_t *ch_si
 
     uint32_t tot_size = handshake_h_size + client_m_size;
 
+    print_debug(
+        "  handshake_h_size: %d\n"
+        "  client_m_size: %d\n"
+        "  tot_size: %d\n",
+        handshake_h_size,
+        client_m_size,
+        tot_size
+    );
+
     uint8_t *h = handshake_lin_alloc(&s->h, tot_size);
 
     if (!h)
         return NULL;
-
+    
+    uint8_t *r = h;
     *ch_size = tot_size;
 
     *(HandshakeType_t *)h = HandshakeType_client_hello;
+    print_debug("Handshake Type: %02X\n", *(HandshakeType_t *)h);
     h = h + sizeof(HandshakeType_t);
 
     uint32_t BE_client_size = host_htobe32(client_m_size);
     uint8_t *cs_p = (uint8_t *)&BE_client_size;
     host_memcpy(h, cs_p + 1, 3 * sizeof(uint8_t));
+    print_debug("Length: ");
+    print_debug_arr(h, 3);
     h = h + 3 * sizeof(uint8_t);
 
     *(ProtocolVersion_t *)h = ch->client_version;
@@ -200,7 +217,7 @@ static void *new_raw_ch(tp_sock_t *s, const ClientHello_p_t *ch, uint32_t *ch_si
     host_memcpy(h, ch->compression_methods, compression_methods_len *
                                             sizeof(CompressionMethod_t));
 
-    return h;
+    return r;
 }
 
 static void parse_raw_ch(ClientHello_p_t *ch, const void *raw_ch) {
@@ -254,6 +271,7 @@ static void *new_raw_sh(tp_sock_t *s, const ServerHello_p_t *sh, uint32_t *sh_si
     if (!h)
         return NULL;
     
+    uint8_t *r = h;
     *sh_size = tot_size;
 
     *(HandshakeType_t *)h = HandshakeType_server_hello;
@@ -281,7 +299,7 @@ static void *new_raw_sh(tp_sock_t *s, const ServerHello_p_t *sh, uint32_t *sh_si
 
     *(CompressionMethod_t *)h = sh->compression_method;
 
-    return h;
+    return r;
 }
 
 static void parse_raw_sh(ServerHello_p_t *sh, const void *raw_sh) {
@@ -319,6 +337,7 @@ static void *new_raw_shd(tp_sock_t *s, uint32_t *shd_size) {
     if (!h)
         return NULL;
 
+    uint8_t *r = h;
     *shd_size = handshake_h_size;
 
     *(HandshakeType_t *)h = HandshakeType_server_hello_done;
@@ -328,7 +347,7 @@ static void *new_raw_shd(tp_sock_t *s, uint32_t *shd_size) {
     uint8_t *zero_p = (uint8_t *)&zero;
     host_memcpy(h, zero_p, 3 * sizeof(uint8_t));
 
-    return h;
+    return r;
 }
 
 static void parse_raw_ske(ServerKeyExchange_p_t *ske, const void *raw_ske) {
@@ -354,6 +373,7 @@ static void *new_raw_cke(tp_sock_t *s, const ClientKeyExchange_p_t *cke,
     if (!h)
         return NULL;
     
+    uint8_t *r = h;
     *cke_size = tot_size;
 
     *(HandshakeType_t *)h = HandshakeType_client_key_exchange;
@@ -369,7 +389,7 @@ static void *new_raw_cke(tp_sock_t *s, const ClientKeyExchange_p_t *cke,
 
     host_memcpy(h, cke->psk_identity, cke->psk_identity_len * sizeof(uint8_t));
 
-    return h;
+    return r;
 }
 
 static void parse_raw_cke(ClientKeyExchange_p_t *cke, const void *raw_cke) {
@@ -394,6 +414,7 @@ static void *new_raw_f(tp_sock_t *s, const Finished_p_t *f, uint32_t *f_size) {
     if (!h)
         return NULL;
     
+    uint8_t *r = h;
     *f_size = tot_size;
 
     *(HandshakeType_t *)h = HandshakeType_finished;
@@ -406,7 +427,7 @@ static void *new_raw_f(tp_sock_t *s, const Finished_p_t *f, uint32_t *f_size) {
 
     host_memcpy(h, f->verify_data, 12*sizeof(uint8_t));
 
-    return h;
+    return r;
 }
 
 static void parse_raw_f(Finished_p_t *f, const void *raw_f) {

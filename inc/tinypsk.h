@@ -66,9 +66,15 @@
 #include "stdio.h"
 #define check(x) assert((x))
 #define print_debug(...) fprintf(stderr, __VA_ARGS__)
+#define print_debug_arr(arr, len)   do {                                             \
+                                       for (size_t i = 0; i < len; i++)              \
+                                          print_debug("%02X ", *((uint8_t *)arr + i)); \
+                                       print_debug("\n");                            \
+                                    }while(0)
 #else
 #define check(x)
 #define print_debug(...)
+#define print_debug_arr(arr, len)
 #endif
 
 typedef struct tp_sock_t_ tp_sock_t;

@@ -21,7 +21,7 @@ MKDIR     = @mkdir -p $(@D)
 
 .PHONY: build build_no_os debug debug_no_os clean
 
-build: $(OBJS)
+build: $(OBJS) client.elf server.elf
 
 build_no_os: CFLAGS += $(NO_OS_)
 build_no_os: build
@@ -36,5 +36,9 @@ $(OBJ)%.o: $(SRC)%.c $(INC)%.h
 	$(MKDIR)
 	$(CC) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
+%.elf: %.c
+	$(CC) $< $(INCLUDE) $(OBJS) $(CFLAGS) -o $@
+
 clean:
+	rm -f *.elf
 	rm -f $(OBJ)*
