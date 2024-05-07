@@ -10,7 +10,7 @@
 #define SET_HS_STATE(x, state)  do {                                                             \
                                     (x) = ((x) & SOCK_HS_DONE) | (state) | ((x) & SOCK_MD_MASK); \
                                 } while (0)
-#define GET_HS_STATE(x) (((x) & SOCK_HS_MASK) >> 1)
+#define GET_HS_STATE(x) ((x) & SOCK_HS_MASK)
 
 /* ---------------- Handshake protocol parsing structures declaration ---------------- */
 
@@ -154,13 +154,13 @@ static void *new_raw_ch(tp_sock_t *s, const ClientHello_p_t *ch, uint32_t *ch_si
     uint32_t handshake_h_size = sizeof(HandshakeType_t) +
                                 3*sizeof(uint8_t);
 
-    uint32_t client_m_size = sizeof(ProtocolVersion_t)       +
-                             sizeof(Random_t)                +
-                             sizeof(session_id_len)          +
-                             session_id_len                  +
-                             sizeof(cipher_suites_len)       +
-                             cipher_suites_len               +
-                             sizeof(compression_methods_len) +
+    uint32_t client_m_size = sizeof(ProtocolVersion_t)                     +
+                             sizeof(Random_t)                              +
+                             sizeof(session_id_len)                        +
+                             session_id_len                                +
+                             sizeof(cipher_suites_len)                     +
+                             cipher_suites_len * sizeof(cipher_suites_len) +
+                             sizeof(compression_methods_len)               +
                              compression_methods_len;
 
     uint32_t tot_size = handshake_h_size + client_m_size;
@@ -495,14 +495,23 @@ static int handle_ch(tp_sock_t *s, const void *handshake_m, uint32_t handshake_m
     CipherSuite_t available_cs[] = cipher_suites_default;
     size_t cs_len = sizeof(available_cs) / sizeof(available_cs[0]);
     
-    size_t idx_cs = 0;
+    uint16_t idx_cs = 0;
+    size_t i = 0;
     unsigned char found = 0;
     while (idx_cs < chp.cipher_suites_len && !found) {
-        for (size_t i = 0; i < cs_len; i++)
-            if (chp.cipher_suites[idx_cs].b1 == available_cs[i].b1 &&
-                chp.cipher_suites[idx_cs].b2 == available_cs[i].b2)
-                found = 1;
-        idx_cs++;
+        while(i < cs_len &&
+              chp.cipher_suites[idx_cs].b1 != available_cs[i].b1 &&
+              chp.cipher_suites[idx_cs].b2 != available_cs[i].b2) {
+            i++;
+        }
+        if (chp.cipher_suites[idx_cs].b1 == available_cs[i].b1 &&
+            chp.cipher_suites[idx_cs].b2 == available_cs[i].b2) {
+            found = 1;
+        }
+        else {
+            idx_cs++;
+            i = 0;
+        }
     }
     if (idx_cs >= chp.cipher_suites_len) {
         Alert_t alert = {
@@ -518,13 +527,18 @@ static int handle_ch(tp_sock_t *s, const void *handshake_m, uint32_t handshake_m
     CompressionMethod_t available_cm[] = compression_methods_default;
     size_t cm_len = sizeof(available_cm) / sizeof(available_cm[0]);
 
-    size_t idx_cm = 0;
+    uint8_t idx_cm = 0;
+    i = 0;
     found = 0;
     while (idx_cm < chp.compression_methods_len && !found) {
-        for (size_t i = 0; i < cm_len; i++)
-            if (chp.compression_methods[idx_cm] == available_cm[i])
-                found = 1;
-        idx_cm++;
+        while (i < cm_len && chp.compression_methods[idx_cm] != available_cm[i])
+            i++;
+        if (chp.compression_methods[idx_cm] == available_cm[i])
+            found = 1;
+        else {
+            idx_cm++;
+            i = 0;
+        }
     }
     if (idx_cm >= chp.compression_methods_len) {
         Alert_t alert = {
@@ -695,7 +709,7 @@ static int handle_shd(tp_sock_t *s, const void *handshake_m, uint32_t handshake_
                                                     ProtocolVersion_t record_prtcv) {
 
     if ((s->sock_state & SOCK_MD_MASK) == SOCK_MD_SERVER ||
-        (GET_HS_STATE(s->sock_state) != SOCK_HS_CH && 
+        (GET_HS_STATE(s->sock_state) != SOCK_HS_SH && 
          GET_HS_STATE(s->sock_state) != SOCK_HS_SKE)) {
         Alert_t alert = {
             .level = AlertLevel_fatal,
@@ -884,7 +898,7 @@ static int handle_f(tp_sock_t *s, const void *handshake_m, uint32_t handshake_m_
 
     if ((s->sock_state & SOCK_MD_MASK) == SOCK_MD_CLIENT) {
         /* Received a Finished message as a Client. We need to check */
-        if (GET_HS_STATE(s->sock_state) != SOCK_HS_SHD) {
+        if (GET_HS_STATE(s->sock_state) != SOCK_HS_FC) {
         Alert_t alert = {
             .level = AlertLevel_fatal,
             .description = AlertDescription_unexpected_message

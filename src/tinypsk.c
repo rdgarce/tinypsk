@@ -72,7 +72,7 @@ int tp_send(tp_sock_t *s, const void *buff, size_t len) {
     return application_send(s, buff, len);
 }
 
-int tp_rcv(tp_sock_t *s, void *buff, size_t len) {
+int tp_recv(tp_sock_t *s, void *buff, size_t len) {
 
     int res = 0;
     while ( !(s->sock_state & SOCK_APPL_RD) &&

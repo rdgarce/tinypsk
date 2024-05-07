@@ -79,6 +79,41 @@ int main(int argc, char const* argv[])
     char hello[] = "Hello from server";
 
     tp_send(&tls_sock, hello, sizeof(hello));
+    tp_send(&tls_sock, hello, sizeof(hello));
+    tp_send(&tls_sock, hello, sizeof(hello));
+    tp_send(&tls_sock, hello, sizeof(hello));
+    
+    int rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
 
     // closing the connected socket
     close(new_socket);

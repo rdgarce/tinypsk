@@ -11,8 +11,15 @@
 
 #define PORT 5555
 
+static char corrupt = 0;
+
 int socket_send(void *s, const void *buf, size_t size) {
 
+	if (corrupt)
+	{
+		((char *)buf)[size/2] = rand() % 255;
+	}
+	
     return (int)send((int)s, buf, size, 0);
 }
 
@@ -71,6 +78,44 @@ int main(int argc, char const* argv[])
         fprintf(stderr, "Error %d on handshake\n", res);
         exit(EXIT_FAILURE);
     }
+
+	tp_send(&tls_sock, hello, sizeof(hello));
+    tp_send(&tls_sock, hello, sizeof(hello));
+	corrupt = 1;
+    tp_send(&tls_sock, hello, sizeof(hello));
+    tp_send(&tls_sock, hello, sizeof(hello));
+    
+    int rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    
+    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
+    if (rcvd < 0) {
+        fprintf(stderr, "Error %d on receiving\n", rcvd);
+        exit(EXIT_FAILURE);
+    }
+    else
+	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
 
 	// closing the connected socket
 	close(client_fd);

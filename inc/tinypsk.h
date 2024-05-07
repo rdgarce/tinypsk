@@ -120,7 +120,7 @@ int tp_initS(tp_sock_t *s, void *tl_structure,
             int (*get_ms)(uint16_t, Random_t *, uint8_t *));
 int tp_handshake(tp_sock_t *s);
 int tp_send(tp_sock_t *s, const void *buff, size_t len);
-int tp_rcv(tp_sock_t *s, void *buff, size_t len);
+int tp_recv(tp_sock_t *s, void *buff, size_t len);
 int tp_close(tp_sock_t *s);
 
 #endif
