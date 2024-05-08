@@ -11,14 +11,7 @@
 
 #define PORT 5555
 
-static char corrupt = 0;
-
 int socket_send(void *s, const void *buf, size_t size) {
-
-	if (corrupt)
-	{
-		((char *)buf)[size/2] = rand() % 255;
-	}
 	
     return (int)send((int)s, buf, size, 0);
 }
@@ -81,7 +74,6 @@ int main(int argc, char const* argv[])
 
 	tp_send(&tls_sock, hello, sizeof(hello));
     tp_send(&tls_sock, hello, sizeof(hello));
-	corrupt = 1;
     tp_send(&tls_sock, hello, sizeof(hello));
     tp_send(&tls_sock, hello, sizeof(hello));
     
