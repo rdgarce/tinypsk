@@ -121,9 +121,9 @@ static int send_bytes(const tp_sock_t *s, const void *buf, size_t len) {
     print_debug_arr(buf, len);
 
     size_t sent_bytes = 0;
-    int res;
+    int res = 0;
     while (sent_bytes < len) {
-        buf = (uint8_t *)buf + sent_bytes;
+        buf = (uint8_t *)buf + res;
         res = s->tl_send(s->tl_structure, buf, len - sent_bytes);
         switch (res) {
         case -1: return TP_FATAL;
@@ -142,9 +142,9 @@ static int recv_bytes(const tp_sock_t *s, void *buf, size_t len) {
     print_debug("  Starting reception of %ld bytes\n", len);
 
     size_t recvd_bytes = 0;
-    int res;
+    int res = 0;
     while (recvd_bytes < len) {
-        buf = (uint8_t *)buf + recvd_bytes;
+        buf = (uint8_t *)buf + res;
         res = s->tl_recv(s->tl_structure, buf, len - recvd_bytes);
         switch (res) {
         case -1: return TP_FATAL;
