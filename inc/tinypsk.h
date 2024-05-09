@@ -110,6 +110,10 @@ struct tp_sock_t_ {
    int (*tl_recv)(void *, void *, size_t);
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int tp_initC(tp_sock_t *s, uint16_t psk_identity, void *tl_structure,
             int (*tl_send)(void *, const void *, size_t),
             int (*tl_recv)(void *, void *, size_t),
@@ -122,5 +126,9 @@ int tp_handshake(tp_sock_t *s);
 int tp_send(tp_sock_t *s, const void *buff, size_t len);
 int tp_recv(tp_sock_t *s, void *buff, size_t len);
 int tp_close(tp_sock_t *s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

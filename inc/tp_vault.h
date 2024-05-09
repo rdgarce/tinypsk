@@ -20,7 +20,15 @@ typedef struct tp_cred{
     const uint16_t psk_len;
 }tp_cred_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int tp_vault_set(tp_cred_t *credentials, size_t creds_size);
 int tp_vault_get_ms(uint16_t identity, Random_t *S_C_randoms, uint8_t *ms);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

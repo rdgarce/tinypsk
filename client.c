@@ -25,9 +25,12 @@ int main(int argc, char const* argv[])
 {
 	int status, client_fd;
 	struct sockaddr_in serv_addr;
-	char hello[] = "Hello from client";
-	char buffer[1024] = { 0 };
-	if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+
+	unsigned char rcv_buff[1024];
+    char str[] = "Hello World, This is the default simulation!\n"
+                 "This is an echo!\nThis is an echo...\n";
+	
+    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("\n Socket creation error \n");
 		return -1;
 	}
@@ -72,44 +75,32 @@ int main(int argc, char const* argv[])
         exit(EXIT_FAILURE);
     }
 
-	tp_send(&tls_sock, hello, sizeof(hello));
-    tp_send(&tls_sock, hello, sizeof(hello));
-    tp_send(&tls_sock, hello, sizeof(hello));
-    tp_send(&tls_sock, hello, sizeof(hello));
-    
-    int rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
-    if (rcvd < 0) {
-        fprintf(stderr, "Error %d on receiving\n", rcvd);
-        exit(EXIT_FAILURE);
-    }
-    else
-	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
-    
-    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
-    if (rcvd < 0) {
-        fprintf(stderr, "Error %d on receiving\n", rcvd);
-        exit(EXIT_FAILURE);
-    }
-    else
-	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
-    
-    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
-    if (rcvd < 0) {
-        fprintf(stderr, "Error %d on receiving\n", rcvd);
-        exit(EXIT_FAILURE);
-    }
-    else
-	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
-    
-    rcvd = tp_recv(&tls_sock, buffer, sizeof(hello));
-    if (rcvd < 0) {
-        fprintf(stderr, "Error %d on receiving\n", rcvd);
-        exit(EXIT_FAILURE);
-    }
-    else
-	    printf("Recvd %d bytes:\nString is: %s\n", rcvd, buffer);
+    fprintf(stderr, "Printing our Server_Client random\n");
+    for (size_t i = 0; i < 64; i++)
+        fprintf(stderr, "%x ", ((uint8_t *)&tls_sock.h.S_C_randoms)[i]);
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "Printing our master secret\n");
+    for (size_t i = 0; i < 48; i++)
+        fprintf(stderr, "%x ", tls_sock.h.master_secret[i]);
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "Printing our Client Write key\n");
+    for (size_t i = 0; i < 32; i++)
+        fprintf(stderr, "%x ", tls_sock.C_S_write_MAC_key[0][i]);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Printing our Server Write key\n");
+    for (size_t i = 0; i < 32; i++)
+        fprintf(stderr, "%x ", tls_sock.C_S_write_MAC_key[1][i]);
+    fprintf(stderr, "\n");
+
+
+	tp_send(&tls_sock, str, sizeof(str));
+    int rcvd = tp_recv(&tls_sock, rcv_buff, sizeof(rcv_buff));
+    if (rcvd > 0)
+        fprintf(stderr, "%s", rcv_buff);
 
 	// closing the connected socket
-	close(client_fd);
+    close(client_fd);
 	return 0;
 }
