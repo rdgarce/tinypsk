@@ -3,7 +3,7 @@
 #include "alert.h"
 #include "record.h"
 
-#define HANDSHAKE_MEM_SIZE 256
+#define HANDSHAKE_MEM_SIZE 1024
 static char handshake_mem[HANDSHAKE_MEM_SIZE];
 #define APPLICATION_MEM_SIZE 512
 static char application_mem[APPLICATION_MEM_SIZE];

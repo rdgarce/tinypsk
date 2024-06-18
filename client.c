@@ -9,16 +9,27 @@
 #include "tinypsk.h"
 #include "tp_vault.h"
 
-#define PORT 5555
+#define PORT 8050
 
 int socket_send(void *s, const void *buf, size_t size) {
 	
+    print_debug("Sending these bytes:\n");
+    print_debug_arr(buf, size);
+
     return (int)send((int)s, buf, size, 0);
 }
 
 int socket_recv(void *s, void *buf, size_t size) {
 
-    return (int)recv((int)s, buf, size, 0);
+    int res = (int)recv((int)s, buf, size, 0);
+    if (res >= 0) {
+        print_debug("Receiving these bytes:\n");
+        print_debug_arr(buf, res);
+    }
+    else
+        print_debug("Error in socket recv\n");
+
+    return res;
 }
 
 int main(int argc, char const* argv[])
@@ -58,8 +69,8 @@ int main(int argc, char const* argv[])
     tp_sock_t tls_sock;
 
     tp_cred_t creds[] = {
-        TP_CRED(11, "psk11"),
-        TP_CRED(22, "psk22")
+        TP_CRED(11, "THIS IS THE PRE-SHARED KEY."),
+        TP_CRED(22, "THIS IS THE PRE-SHARED KEY.")
     };
     tp_vault_set(creds, 2);
 
