@@ -19,9 +19,9 @@ MKDIR     = @mkdir -p $(@D)
 
 # Targets
 
-.PHONY: build build_no_os debug debug_no_os clean
+.PHONY: build build_no_os debug debug_no_os example clean
 
-build: $(OBJS) client.elf server.elf
+build: $(OBJS)
 
 build_no_os: CFLAGS += $(NO_OS_)
 build_no_os: build
@@ -31,6 +31,8 @@ debug: build
 
 debug_no_os: CFLAGS += $(DEBUG_) $(NO_OS_)
 debug_no_os: build
+
+example: client.elf server.elf
 
 $(OBJ)%.o: $(SRC)%.c $(INC)%.h
 	$(MKDIR)
